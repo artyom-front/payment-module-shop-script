@@ -26,23 +26,23 @@ class bspbpaymentPayment extends waPayment implements waIPayment
     public function payment($payment_form_data, $order_data, $auto_submit = false)
     {
         if (empty($order_data['description'])) {
-            $order_data['description'] = 'Заказ '.$order_data['order_id'];
+            $order_data['description'] = 'Заказ ' . $order_data['order_id'];
         }
 
         $order = waOrder::factory($order_data);
-            if (!in_array($order->currency_id, $this->allowedCurrency())) {
-                throw new waException(BSPB_PAYMENT_MSG_CURRENCY_ERROR);
-            }
+        if (!in_array($order->currency_id, $this->allowedCurrency())) {
+            throw new waException(BSPB_PAYMENT_MSG_CURRENCY_ERROR);
+        }
 
         $action_url = $this->getUrl();
 
-        $this->certificate_path = wa()->getDataPath('crt', false, 'bspbpayment'). '/pgtest_cer.pem';
-        $this->private_key_path = wa()->getDataPath('crt', false, 'bspbpayment'). '/pgtest_key.key';
+        $this->certificate_path = wa()->getDataPath('crt', false, 'bspbpayment') . '/pgtest_cer.pem';
+        $this->private_key_path = wa()->getDataPath('crt', false, 'bspbpayment') . '/pgtest_key.key';
 
-//        $currency_id = $order->currency_id;
-//        $currency = array_search($currency_id, unserialize($this->currency));
+        //        $currency_id = $order->currency_id;
+        //        $currency = array_search($currency_id, unserialize($this->currency));
         $currency = $order->currency_id;
-        $pattern = "@[^\\w\\d".preg_quote("~@#$%^-_(){}'`+=[]:;/\\", '@')."]+@u";
+        $pattern = "@[^\\w\\d" . preg_quote("~@#$%^-_(){}'`+=[]:;/\\", '@') . "]+@u";
         $description = trim(preg_replace('@\\s{2,}@', ' ', preg_replace($pattern, ' ', $order_data['description'])));
 
         $data = [
@@ -57,7 +57,7 @@ class bspbpaymentPayment extends waPayment implements waIPayment
         if (BSPB_ENABLE_FISCALE_OPTIONS == true && $this->send_order) {
             $data['srcEmail'] = 'pg@bspb.ru';
             $data['receipt'] = $this->getOrderBundle($order_data);
-       }
+        }
 
 
         $headers = [
@@ -78,7 +78,6 @@ class bspbpaymentPayment extends waPayment implements waIPayment
                     $order_password = $responseData['order']['password'];
 
                     $formUrl = "$hppUrl?id=$order_id&password=$order_password";
-
                 } else {
                     throw new waPaymentException(BSPB_PAYMENT_MSG_ERROR_MESSAGE . 'Объект order не содержит необходимых данных.');
                 }
@@ -137,9 +136,9 @@ class bspbpaymentPayment extends waPayment implements waIPayment
         }
 
         $payments[] = array(
-                'type' => 2,
-                'amt' => number_format($order_data['total'], 2, '.', ''),
-            );
+            'type' => 2,
+            'amt' => number_format($order_data['total'], 2, '.', ''),
+        );
 
         $order_bundle = array(
             'consumer' => array(
@@ -164,20 +163,20 @@ class bspbpaymentPayment extends waPayment implements waIPayment
         $items = array();
         if (is_array($order_data['items'])) {
             foreach ($order_data['items'] as $key => $data) {
-//                if (!empty($data['tax_included']) && (int)$data['tax_rate'] > 0) {
-//                    self::log($this->id, sprintf('НДС не включен в цену товара: %s.', var_export($data, true)));
-//                    throw new waPaymentException('Ошибка платежа. Обратитесь в службу поддержки.');
-//                }
+                //                if (!empty($data['tax_included']) && (int)$data['tax_rate'] > 0) {
+                //                    self::log($this->id, sprintf('НДС не включен в цену товара: %s.', var_export($data, true)));
+                //                    throw new waPaymentException('Ошибка платежа. Обратитесь в службу поддержки.');
+                //                }
                 $items[] = $this->formalizeItemData($data, $order_data, $key);
             }
         };
 
         // DELIVERY
         if (!empty($order_data['shipping'])) {
-//            if (!$order_data->shipping_tax_included && (int)$order_data->shipping_tax_rate > 0) {
-//                self::log($this->id, sprintf('НДС не включен в стоимость доставки (%s).', $order_data->shipping_name));
-//                throw new waPaymentException('Ошибка платежа. Обратитесь в службу поддержки.');
-//            }
+            //            if (!$order_data->shipping_tax_included && (int)$order_data->shipping_tax_rate > 0) {
+            //                self::log($this->id, sprintf('НДС не включен в стоимость доставки (%s).', $order_data->shipping_name));
+            //                throw new waPaymentException('Ошибка платежа. Обратитесь в службу поддержки.');
+            //            }
             $data = array(
                 'desc' => (!empty($order_data->shipping_name)) ? $order_data->shipping_name : BSPB_PAYMENT_TEXT_DELIVERY,
                 'quantity' => 1,
@@ -317,12 +316,11 @@ class bspbpaymentPayment extends waPayment implements waIPayment
                 $this->merchant_id = $params['merchant_id'];
             }
 
-            if ( !empty($request['orderId'])) {
+            if (!empty($request['orderId'])) {
                 $this->order_id = $request['orderId'];
             } elseif (!empty($request['mdOrder'])) {
                 $this->order_id = $request['mdOrder'];
             }
-
         } elseif (!empty($request['app_id'])) {
             $this->app_id = $request['app_id'];
         }
@@ -353,20 +351,18 @@ class bspbpaymentPayment extends waPayment implements waIPayment
             $transaction_data['state'] = self::STATE_CAPTURED;
             $transaction_data['type'] = self::OPERATION_AUTH_CAPTURE;
             $url = $this->getAdapter()->getBackUrl(waAppPayment::URL_SUCCESS, $transaction_data);
-
         } elseif ($request['ErrorCode'] == 0 && $request['OrderStatus'] == 1) {
             $message = $request['ErrorMessage'];
             $app_payment_method = self::CALLBACK_PAYMENT;
             $transaction_data['state'] = self::STATE_CAPTURED;
             $transaction_data['type'] = self::OPERATION_AUTH_CAPTURE;
             $url = $this->getAdapter()->getBackUrl(waAppPayment::URL_SUCCESS, $transaction_data);
-
         } else {
             $message = $request['ErrorMessage'];
 
             switch ($request['ErrorCode']) {
                 case 2:
-//                    $message = 'Заказ отклонен по причине ошибки в реквизитах платежа.';
+                    //                    $message = 'Заказ отклонен по причине ошибки в реквизитах платежа.';
                     $app_payment_method = self::CALLBACK_DECLINE;
                     $transaction_data['state'] = self::STATE_DECLINED;
                     $transaction_data['type'] = self::OPERATION_CANCEL;
@@ -374,7 +370,7 @@ class bspbpaymentPayment extends waPayment implements waIPayment
                     break;
 
                 case 5:
-//                    $message = 'Ошибка значения параметра запроса.';
+                    //                    $message = 'Ошибка значения параметра запроса.';
                     $app_payment_method = self::CALLBACK_DECLINE;
                     $transaction_data['state'] = self::STATE_DECLINED;
                     $transaction_data['type'] = self::OPERATION_CANCEL;
@@ -382,7 +378,7 @@ class bspbpaymentPayment extends waPayment implements waIPayment
                     break;
 
                 case 6:
-//                    $message = 'Незарегистрированный OrderId.';
+                    //                    $message = 'Незарегистрированный OrderId.';
                     $app_payment_method = self::CALLBACK_DECLINE;
                     $transaction_data['state'] = self::STATE_DECLINED;
                     $transaction_data['type'] = self::OPERATION_CANCEL;
@@ -390,7 +386,7 @@ class bspbpaymentPayment extends waPayment implements waIPayment
                     break;
 
                 default:
-//                    $message = $request['ErrorMessage'];
+                    //                    $message = $request['ErrorMessage'];
                     $app_payment_method = self::CALLBACK_DECLINE;
                     $transaction_data['state'] = self::STATE_DECLINED;
                     $transaction_data['type'] = self::OPERATION_CANCEL;
@@ -446,5 +442,4 @@ class bspbpaymentPayment extends waPayment implements waIPayment
 
         return $response;
     }
-
 }
